@@ -1,6 +1,6 @@
 -- ╔══════════════════════════════════════════╗
 -- ║       MAINHACK PANEL  •  by prada        ║
--- ║         Version 3.2 — All Fixed          ║
+-- ║         Version 3.3 — All Fixed          ║
 -- ╚══════════════════════════════════════════╝
  
 local Players          = game:GetService("Players")
@@ -113,7 +113,7 @@ local SubTitle = Instance.new("TextLabel")
 SubTitle.Size             = UDim2.new(1, 0, 0, 16)
 SubTitle.Position         = UDim2.new(0, 0, 0, 34)
 SubTitle.BackgroundTransparency = 1
-SubTitle.Text             = "by prada  •  v3.2"
+SubTitle.Text             = "by prada  •  v3.3"
 SubTitle.TextColor3       = Color3.fromRGB(110, 110, 140)
 SubTitle.TextTransparency = 1
 SubTitle.TextSize         = 11
@@ -569,9 +569,22 @@ RunService.Heartbeat:Connect(function(dt)
     end
 end)
  
+-- ── VOID (téléporte sous la map) ──
+local voidRow, voidSet = createToggle(miscContent, "🕳  Void Kill", function(state)
+    if state then
+        local char = LocalPlayer.Character
+        if char and char.PrimaryPart then
+            char:SetPrimaryPartCFrame(CFrame.new(char.PrimaryPart.Position + Vector3.new(0, -5000, 0)))
+        end
+        -- On désactive immédiatement le toggle (action one-shot)
+        task.defer(function() voidSet(false) end)
+    end
+end)
+ 
 -- ── AIMLOCK ──
 -- Touche Q (AZERTY) = KeyCode.Q
--- Cherche le joueur ennemi le plus proche du centre de l'écran et lock la caméra
+-- Premier appui : lock la cible la plus proche
+-- Deuxième appui : délock (toggle)
 createSection(miscContent, "Combat")
  
 local aimlockRow, aimlockSet = createToggle(miscContent, "🎯  Aimlock  [Q]", function(state)
@@ -581,11 +594,16 @@ local aimlockRow, aimlockSet = createToggle(miscContent, "🎯  Aimlock  [Q]", f
     end
 end)
  
--- Sélection de la cible au press de Q
+-- Q = toggle lock/unlock
 UserInputService.InputBegan:Connect(function(inp, gpe)
     if gpe then return end
     if inp.KeyCode == Enum.KeyCode.Q and aimlockEnabled then
-        -- Trouve le joueur le plus proche du centre écran
+        -- Si déjà une cible lockée → délock
+        if aimlockTarget then
+            aimlockTarget = nil
+            return
+        end
+        -- Sinon → cherche la cible la plus proche du centre écran
         local cam      = workspace.CurrentCamera
         local vpSize   = cam.ViewportSize
         local center   = Vector2.new(vpSize.X / 2, vpSize.Y / 2)
@@ -1170,6 +1188,6 @@ end)
  
 print("╔══════════════════════════════╗")
 print("║  MAINHACK PANEL  •  by prada ║")
-print("║  v3.2  — All Fixed + Aimlock ║")
+print("║  v3.3  — Aimlock Toggle + Void  ║")
 print("║  INSERT pour afficher/masquer║")
 print("╚══════════════════════════════╝")
