@@ -1,6 +1,6 @@
 -- ╔══════════════════════════════════════════╗
 -- ║       MAINHACK PANEL  •  by prada        ║
--- ║         Version 3.3 — All Fixed          ║
+-- ║         Version 3.4 — All Fixed          ║
 -- ╚══════════════════════════════════════════╝
  
 local Players          = game:GetService("Players")
@@ -113,7 +113,7 @@ local SubTitle = Instance.new("TextLabel")
 SubTitle.Size             = UDim2.new(1, 0, 0, 16)
 SubTitle.Position         = UDim2.new(0, 0, 0, 34)
 SubTitle.BackgroundTransparency = 1
-SubTitle.Text             = "by prada  •  v3.3"
+SubTitle.Text             = "by prada  •  v3.4"
 SubTitle.TextColor3       = Color3.fromRGB(110, 110, 140)
 SubTitle.TextTransparency = 1
 SubTitle.TextSize         = 11
@@ -733,6 +733,216 @@ infoLbl.Parent           = gameContent
 Instance.new("UICorner", infoLbl).CornerRadius = UDim.new(0, 8)
  
 -- ══════════════════════════════════════════
+--   SKIN CHANGER (visible uniquement par toi)
+-- ══════════════════════════════════════════
+-- Charge le HumanoidDescription d'un autre joueur et l'applique
+-- LOCALEMENT sur ton perso via ApplyDescriptionReset.
+-- Les autres ne voient pas le changement — uniquement toi.
+-- ══════════════════════════════════════════
+ 
+createSection(gameContent, "Skin Changer  (local)")
+ 
+local skinStatusLbl = Instance.new("TextLabel")
+skinStatusLbl.Size             = UDim2.new(1, 0, 0, 22)
+skinStatusLbl.BackgroundTransparency = 1
+skinStatusLbl.Text             = "Entre le pseudo d'un joueur :"
+skinStatusLbl.TextColor3       = Color3.fromRGB(140, 140, 190)
+skinStatusLbl.TextSize         = 12
+skinStatusLbl.Font             = Enum.Font.Gotham
+skinStatusLbl.TextXAlignment   = Enum.TextXAlignment.Left
+skinStatusLbl.Parent           = gameContent
+ 
+-- Champ texte pseudo
+local skinInputRow = Instance.new("Frame")
+skinInputRow.Size             = UDim2.new(1, 0, 0, 36)
+skinInputRow.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+skinInputRow.BorderSizePixel  = 0
+skinInputRow.Parent           = gameContent
+Instance.new("UICorner", skinInputRow).CornerRadius = UDim.new(0, 8)
+ 
+local skinInput = Instance.new("TextBox")
+skinInput.Size             = UDim2.new(1, -90, 1, -8)
+skinInput.Position         = UDim2.new(0, 8, 0, 4)
+skinInput.BackgroundColor3 = Color3.fromRGB(30, 30, 46)
+skinInput.BorderSizePixel  = 0
+skinInput.Text             = ""
+skinInput.PlaceholderText  = "Pseudo Roblox..."
+skinInput.TextColor3       = Color3.fromRGB(220, 220, 240)
+skinInput.PlaceholderColor3 = Color3.fromRGB(90, 90, 110)
+skinInput.TextSize         = 13
+skinInput.Font             = Enum.Font.Gotham
+skinInput.ClearTextOnFocus = false
+skinInput.Parent           = skinInputRow
+Instance.new("UICorner", skinInput).CornerRadius = UDim.new(0, 6)
+ 
+local skinApplyBtn = Instance.new("TextButton")
+skinApplyBtn.Size             = UDim2.new(0, 72, 1, -8)
+skinApplyBtn.Position         = UDim2.new(1, -80, 0, 4)
+skinApplyBtn.BackgroundColor3 = Color3.fromRGB(55, 55, 155)
+skinApplyBtn.BorderSizePixel  = 0
+skinApplyBtn.Text             = "Appliquer"
+skinApplyBtn.TextColor3       = Color3.fromRGB(255, 255, 255)
+skinApplyBtn.TextSize         = 11
+skinApplyBtn.Font             = Enum.Font.GothamBold
+skinApplyBtn.Parent           = skinInputRow
+Instance.new("UICorner", skinApplyBtn).CornerRadius = UDim.new(0, 6)
+ 
+local skinFeedbackLbl = Instance.new("TextLabel")
+skinFeedbackLbl.Size             = UDim2.new(1, 0, 0, 18)
+skinFeedbackLbl.BackgroundTransparency = 1
+skinFeedbackLbl.Text             = ""
+skinFeedbackLbl.TextColor3       = Color3.fromRGB(100, 200, 100)
+skinFeedbackLbl.TextSize         = 11
+skinFeedbackLbl.Font             = Enum.Font.Gotham
+skinFeedbackLbl.TextXAlignment   = Enum.TextXAlignment.Left
+skinFeedbackLbl.Parent           = gameContent
+ 
+skinApplyBtn.MouseEnter:Connect(function()
+    TweenService:Create(skinApplyBtn, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(80, 80, 210)}):Play()
+end)
+skinApplyBtn.MouseLeave:Connect(function()
+    TweenService:Create(skinApplyBtn, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(55, 55, 155)}):Play()
+end)
+ 
+skinApplyBtn.MouseButton1Click:Connect(function()
+    local username = skinInput.Text
+    if username == "" then
+        skinFeedbackLbl.TextColor3 = Color3.fromRGB(220, 80, 80)
+        skinFeedbackLbl.Text = "⚠ Entre un pseudo !"
+        return
+    end
+ 
+    skinFeedbackLbl.TextColor3 = Color3.fromRGB(200, 200, 100)
+    skinFeedbackLbl.Text = "⏳ Chargement..."
+ 
+    task.spawn(function()
+        -- Récupère l'UserId depuis le pseudo
+        local success, userId = pcall(function()
+            return Players:GetUserIdFromNameAsync(username)
+        end)
+ 
+        if not success or not userId then
+            skinFeedbackLbl.TextColor3 = Color3.fromRGB(220, 80, 80)
+            skinFeedbackLbl.Text = "⚠ Joueur introuvable"
+            return
+        end
+ 
+        -- Récupère le HumanoidDescription du joueur cible
+        local ok, desc = pcall(function()
+            return Players:GetHumanoidDescriptionFromUserId(userId)
+        end)
+ 
+        if not ok or not desc then
+            skinFeedbackLbl.TextColor3 = Color3.fromRGB(220, 80, 80)
+            skinFeedbackLbl.Text = "⚠ Impossible de charger le skin"
+            return
+        end
+ 
+        -- Applique localement sur notre perso
+        local char = LocalPlayer.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                local applyOk = pcall(function()
+                    hum:ApplyDescriptionReset(desc)
+                end)
+                if applyOk then
+                    skinFeedbackLbl.TextColor3 = Color3.fromRGB(100, 220, 100)
+                    skinFeedbackLbl.Text = "✔ Skin de " .. username .. " appliqué !"
+                else
+                    skinFeedbackLbl.TextColor3 = Color3.fromRGB(220, 80, 80)
+                    skinFeedbackLbl.Text = "⚠ Erreur lors de l'application"
+                end
+            end
+        end
+    end)
+end)
+ 
+createButton(gameContent, "↩  Reset mon skin", function()
+    local char = LocalPlayer.Character
+    if char then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            pcall(function()
+                local desc = Players:GetHumanoidDescriptionFromUserId(LocalPlayer.UserId)
+                hum:ApplyDescriptionReset(desc)
+            end)
+            skinFeedbackLbl.TextColor3 = Color3.fromRGB(150, 150, 200)
+            skinFeedbackLbl.Text = "↩ Skin original restauré"
+        end
+    end
+end)
+ 
+-- ══════════════════════════════════════════
+--   MORPH (visible par tout le monde)
+-- ══════════════════════════════════════════
+-- Modifie la taille/proportions du perso via HumanoidDescription.
+-- Appliqué via ApplyDescriptionReset → répliqué côté serveur → visible par tous.
+-- ══════════════════════════════════════════
+ 
+createSection(gameContent, "Morph  (visible par tous)")
+ 
+local morphPresets = {
+    {name = "👶  Bébé",     bodyDepthScale=0.7, bodyHeightScale=0.6, bodyWidthScale=0.7, headScale=1.2},
+    {name = "🏋  Costaud",  bodyDepthScale=1.4, bodyHeightScale=1.0, bodyWidthScale=1.5, headScale=1.0},
+    {name = "🦒  Géant",    bodyDepthScale=1.0, bodyHeightScale=2.0, bodyWidthScale=1.0, headScale=0.8},
+    {name = "🐜  Minuscule",bodyDepthScale=0.4, bodyHeightScale=0.3, bodyWidthScale=0.4, headScale=0.5},
+    {name = "🍄  Fat",      bodyDepthScale=2.0, bodyHeightScale=0.7, bodyWidthScale=2.0, headScale=1.3},
+    {name = "🔄  Normal",   bodyDepthScale=1.0, bodyHeightScale=1.0, bodyWidthScale=1.0, headScale=1.0},
+}
+ 
+local function applyMorph(preset)
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+    pcall(function()
+        local desc = hum:GetAppliedDescription()
+        desc.BodyDepthScale  = preset.bodyDepthScale
+        desc.BodyHeightScale = preset.bodyHeightScale
+        desc.BodyWidthScale  = preset.bodyWidthScale
+        desc.HeadScale       = preset.headScale
+        hum:ApplyDescriptionReset(desc)
+    end)
+end
+ 
+-- Grille 2 colonnes pour les presets
+local morphGrid = Instance.new("Frame")
+morphGrid.Size             = UDim2.new(1, 0, 0, 0)
+morphGrid.BackgroundTransparency = 1
+morphGrid.AutomaticSize    = Enum.AutomaticSize.Y
+morphGrid.Parent           = gameContent
+ 
+local morphGridLayout = Instance.new("UIGridLayout")
+morphGridLayout.CellSize    = UDim2.new(0.5, -4, 0, 34)
+morphGridLayout.CellPadding = UDim2.new(0, 4, 0, 4)
+morphGridLayout.SortOrder   = Enum.SortOrder.LayoutOrder
+morphGridLayout.Parent      = morphGrid
+ 
+for _, preset in ipairs(morphPresets) do
+    local p = preset
+    local btn = Instance.new("TextButton")
+    btn.BackgroundColor3 = Color3.fromRGB(38, 38, 60)
+    btn.BorderSizePixel  = 0
+    btn.Text             = p.name
+    btn.TextColor3       = Color3.fromRGB(205, 205, 230)
+    btn.TextSize         = 12
+    btn.Font             = Enum.Font.GothamSemibold
+    btn.Parent           = morphGrid
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
+ 
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(65, 65, 130)}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(38, 38, 60)}):Play()
+    end)
+    btn.MouseButton1Click:Connect(function()
+        applyMorph(p)
+    end)
+end
+ 
+-- ══════════════════════════════════════════
 --              ONGLET TROLL
 -- ══════════════════════════════════════════
  
@@ -1188,6 +1398,6 @@ end)
  
 print("╔══════════════════════════════╗")
 print("║  MAINHACK PANEL  •  by prada ║")
-print("║  v3.3  — Aimlock Toggle + Void  ║")
+print("║  v3.4  — Skin + Morph           ║")
 print("║  INSERT pour afficher/masquer║")
 print("╚══════════════════════════════╝")
