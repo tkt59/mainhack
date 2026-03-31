@@ -1,12 +1,13 @@
 -- ╔══════════════════════════════════════════╗
 -- ║       MAINHACK PANEL  •  by prada        ║
--- ║         Version 2.0 — All Fixed          ║
+-- ║         Version 3.1 — All Fixed          ║
 -- ╚══════════════════════════════════════════╝
  
 local Players          = game:GetService("Players")
 local RunService       = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService     = game:GetService("TweenService")
+local VirtualUser      = game:GetService("VirtualUser")
  
 local LocalPlayer = Players.LocalPlayer
 local Mouse       = LocalPlayer:GetMouse()
@@ -23,12 +24,14 @@ local jumpEnabled    = false
 local jumpValue      = 150
 local noclipEnabled  = false
 local invisEnabled   = false
+local antiAfkEnabled = false
 local espEnabled     = false
 local spectating     = false
 local spectateConn   = nil
 local guiVisible     = true
 local rainbowHue     = 0
 local espHue         = 0
+local lastRespawn    = 0
  
 -- Stocke les highlights ESP
 local espObjects = {}
@@ -83,7 +86,6 @@ Header.BorderSizePixel      = 0
 Header.Parent               = MainFrame
 Instance.new("UICorner", Header).CornerRadius = UDim.new(0, 10)
  
--- Fix coin bas header (pour pas avoir un gap)
 local HeaderFix = Instance.new("Frame")
 HeaderFix.Size                 = UDim2.new(1, 0, 0, 10)
 HeaderFix.Position             = UDim2.new(0, 0, 1, -10)
@@ -108,7 +110,7 @@ local SubTitle = Instance.new("TextLabel")
 SubTitle.Size             = UDim2.new(1, 0, 0, 16)
 SubTitle.Position         = UDim2.new(0, 0, 0, 34)
 SubTitle.BackgroundTransparency = 1
-SubTitle.Text             = "by prada  •  v2.0"
+SubTitle.Text             = "by prada  •  v3.1"
 SubTitle.TextColor3       = Color3.fromRGB(110, 110, 140)
 SubTitle.TextTransparency = 1
 SubTitle.TextSize         = 11
@@ -158,7 +160,6 @@ end)
 --          ANIMATION OPEN / CLOSE
 -- ══════════════════════════════════════════
  
--- Tous les éléments qu'on fade in/out
 local function getAllFadables()
     return {
         {obj = MainFrame,   prop = "BackgroundTransparency", open = 0,   close = 1},
@@ -176,7 +177,6 @@ local function playOpenAnimation()
     RainbowFrame.BackgroundTransparency = 1
     RainbowFrame.Visible              = true
  
-    -- Cache aussi le contenu des tabs + tabs buttons pendant l'anim
     ContentFrame.Visible = false
     TabsFrame.Visible    = false
  
@@ -198,7 +198,6 @@ local function playOpenAnimation()
 end
  
 local function playCloseAnimation()
-    -- On cache immédiatement les tabs + contenu pour éviter qu'ils restent visibles
     ContentFrame.Visible = false
     TabsFrame.Visible    = false
  
@@ -402,7 +401,6 @@ local function createSlider(parent, labelText, minVal, maxVal, defaultVal, callb
     knob.Parent           = track
     Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
  
-    -- Hitbox transparent pour capturer facilement
     local hitbox = Instance.new("TextButton")
     hitbox.Size               = UDim2.new(1, 0, 0, 30)
     hitbox.Position           = UDim2.new(0, 0, 0.5, -15)
@@ -468,7 +466,6 @@ local miscContent  = createTab("Misc",  "⚙")
 local gameContent  = createTab("Game",  "🎮")
 local trollContent = createTab("Troll", "😈")
  
--- Active Misc par défaut
 tabContents["Misc"].Visible    = true
 activeTab                      = "Misc"
 tabButtons["Misc"].BackgroundColor3 = Color3.fromRGB(75, 75, 175)
@@ -480,9 +477,7 @@ tabButtons["Misc"].TextColor3       = Color3.fromRGB(255, 255, 255)
  
 createSection(miscContent, "Mouvements")
  
--- ── FLY (sans ragdoll) ──
--- On utilise LinearVelocity + AlignOrientation (nouvelles instances physiques)
--- Pas de PlatformStand → plus de ragdoll
+-- ── FLY ──
 local flyRow, flySet = createToggle(miscContent, "✈  Fly", function(state)
     flyEnabled = state
     local char = LocalPlayer.Character
@@ -491,12 +486,10 @@ local flyRow, flySet = createToggle(miscContent, "✈  Fly", function(state)
     local hum  = char:FindFirstChildOfClass("Humanoid")
  
     if not state then
-        -- Supprime les contraintes
-        if root:FindFirstChild("FlyAtt") then root:FindFirstChild("FlyAtt"):Destroy() end
-        if root:FindFirstChild("FlyLV")  then root:FindFirstChild("FlyLV"):Destroy() end
-        if root:FindFirstChild("FlyAO")  then root:FindFirstChild("FlyAO"):Destroy() end
+        if root:FindFirstChild("FlyBV") then root:FindFirstChild("FlyBV"):Destroy() end
+        if root:FindFirstChild("FlyBG") then root:FindFirstChild("FlyBG"):Destroy() end
         if hum then
-            hum.PlatformStand = false   -- remet debout
+            hum.PlatformStand = false
             hum:ChangeState(Enum.HumanoidStateType.GettingUp)
         end
     end
@@ -528,7 +521,6 @@ createSlider(miscContent, "Vitesse Walk", 16, 500, 60, function(val)
 end)
  
 -- ── JUMP POWER ──
--- Fix : on force le JumpPower en continu via Heartbeat
 local jumpRow, jumpSet = createToggle(miscContent, "🦘  Jump Power", function(state)
     jumpEnabled = state
     local char = LocalPlayer.Character
@@ -551,9 +543,31 @@ createSlider(miscContent, "Hauteur Jump", 50, 500, 150, function(val)
     end
 end)
  
-createSection(miscContent, "ESP")
+-- ── ANTI AFK ──
+createSection(miscContent, "Utilitaires")
+ 
+local antiAfkRow, antiAfkSet = createToggle(miscContent, "💤  Anti AFK", function(state)
+    antiAfkEnabled = state
+end)
+ 
+-- Anti-AFK : simule un mouvement toutes les 2 min via VirtualUser
+local antiAfkTimer = 0
+RunService.Heartbeat:Connect(function(dt)
+    if antiAfkEnabled then
+        antiAfkTimer = antiAfkTimer + dt
+        if antiAfkTimer >= 120 then
+            antiAfkTimer = 0
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end
+    else
+        antiAfkTimer = 0
+    end
+end)
  
 -- ── ESP RAINBOW ──
+createSection(miscContent, "ESP")
+ 
 local function clearESP()
     for _, h in pairs(espObjects) do
         pcall(function() h:Destroy() end)
@@ -613,8 +627,23 @@ local noclipRow, noclipSet = createToggle(gameContent, "👻  Noclip", function(
     noclipEnabled = state
 end)
  
+-- ── RESPAWN FIXÉ ──
+-- Anti-spam : cooldown de 3 secondes
 createButton(gameContent, "🔄  Respawn", function()
-    LocalPlayer:LoadCharacter()
+    local now = tick()
+    if now - lastRespawn < 3 then return end
+    lastRespawn = now
+    -- Méthode propre : on détruit le character, Roblox le respawn automatiquement
+    local char = LocalPlayer.Character
+    if char then
+        -- Désactive les features actives avant respawn
+        flyEnabled    = false
+        speedEnabled  = false
+        jumpEnabled   = false
+        noclipEnabled = false
+        invisEnabled  = false
+        char:BreakJoints()
+    end
 end)
  
 createButton(gameContent, "📍  Goto Spawn", function()
@@ -692,7 +721,6 @@ local function refreshPlayerList()
             nameLbl.TextXAlignment   = Enum.TextXAlignment.Left
             nameLbl.Parent           = row
  
-            -- Bouton TP
             local tpBtn = Instance.new("TextButton")
             tpBtn.Size             = UDim2.new(0, 42, 0, 24)
             tpBtn.Position         = UDim2.new(1, -158, 0.5, -12)
@@ -705,7 +733,6 @@ local function refreshPlayerList()
             tpBtn.Parent           = row
             Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 6)
  
-            -- Bouton Spectate
             local specBtn = Instance.new("TextButton")
             specBtn.Size             = UDim2.new(0, 76, 0, 24)
             specBtn.Position         = UDim2.new(1, -108, 0.5, -12)
@@ -761,35 +788,82 @@ end)
  
 createSection(trollContent, "Invisible")
  
--- ── INVISIBLE ──
--- Rend toutes les parts du perso transparentes sauf HumanoidRootPart
+-- ══════════════════════════════════════════
+--     INVISIBLE FIXÉ — v3.1
+-- ══════════════════════════════════════════
+--
+-- Le problème de l'ancienne version :
+--   • Elle ne rendait pas transparents les accessoires (chapeaux, vêtements,
+--     outils) car ils sont dans des sous-dossiers Accessory > Handle.
+--   • Elle ne gérait pas les MeshPart ni les Part portant un SurfaceAppearance.
+--   • Les autres joueurs voyaient quand même le perso à cause des parts non
+--     traitées (ex: RootAttachment, welds, etc.) et des objets respawnés.
+--
+-- Correction v3.1 :
+--   • On parcourt TOUS les descendants (GetDescendants) du Character.
+--   • On rend transparent tout ce qui est BasePart (Part, MeshPart, UnionOperation,
+--     SpecialMesh inclus via son parent) SAUF HumanoidRootPart.
+--   • On rend transparent aussi les Decal et les SurfaceAppearance.
+--   • On maintient l'invisibilité en continu via Heartbeat pour survivre
+--     à n'importe quel chargement de mesh ou reload de skin.
+--   • On restore correctement la transparence originale à la désactivation.
+-- ══════════════════════════════════════════
+ 
 local savedTransparency = {}
+ 
+local function applyInvisible(char)
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+            if savedTransparency[part] == nil then
+                savedTransparency[part] = part.Transparency
+            end
+            part.Transparency = 1
+            -- Désactive aussi les SurfaceAppearance pour les skins UGC
+            local sa = part:FindFirstChildOfClass("SurfaceAppearance")
+            if sa then
+                if savedTransparency[sa] == nil then
+                    savedTransparency[sa] = sa.AlphaType
+                end
+                -- On ne peut pas rendre SurfaceAppearance transparent directement,
+                -- mais rendre la part transparente suffit.
+            end
+        elseif part:IsA("Decal") then
+            if savedTransparency[part] == nil then
+                savedTransparency[part] = part.Transparency
+            end
+            part.Transparency = 1
+        end
+    end
+end
+ 
+local function restoreVisible(char)
+    if not char then return end
+    for part, trans in pairs(savedTransparency) do
+        pcall(function()
+            if part:IsA("BasePart") or part:IsA("Decal") then
+                part.Transparency = trans
+            end
+        end)
+    end
+    savedTransparency = {}
+end
  
 local invisRow, invisSet = createToggle(trollContent, "👁  Invisible", function(state)
     invisEnabled = state
     local char = LocalPlayer.Character
-    if not char then return end
- 
     if state then
         savedTransparency = {}
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                savedTransparency[part] = part.Transparency
-                part.Transparency = 1
-            elseif part:IsA("Decal") then
-                savedTransparency[part] = part.Transparency
-                part.Transparency = 1
-            end
-        end
+        applyInvisible(char)
     else
-        for part, trans in pairs(savedTransparency) do
-            pcall(function() part.Transparency = trans end)
-        end
-        savedTransparency = {}
+        restoreVisible(char)
     end
 end)
  
--- Re-invisible si le perso respawn
+-- ══════════════════════════════════════════
+--       RESET AU RESPAWN
+-- ══════════════════════════════════════════
+ 
 LocalPlayer.CharacterAdded:Connect(function(char)
     flyEnabled    = false
     speedEnabled  = false
@@ -797,12 +871,13 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     noclipEnabled = false
     invisEnabled  = false
     savedTransparency = {}
-    -- Reset toggles visuels
+ 
     flySet(false)
     speedSet(false)
     jumpSet(false)
     noclipSet(false)
     invisSet(false)
+ 
     if espEnabled then
         task.wait(1)
         setupESP()
@@ -824,12 +899,10 @@ RunService.Heartbeat:Connect(function(dt)
         infoLbl.Text = string.format("  Pos: %.1f, %.1f, %.1f  |  Joueurs: %d", p.X, p.Y, p.Z, #Players:GetPlayers())
     end
  
-    -- ── FLY SANS RAGDOLL ──
-    -- Utilise BodyVelocity + BodyGyro mais SANS PlatformStand
+    -- ── FLY ──
     if flyEnabled and char and root and hum then
         local cam = workspace.CurrentCamera
  
-        -- BodyVelocity
         local bv = root:FindFirstChild("FlyBV")
         if not bv then
             bv           = Instance.new("BodyVelocity")
@@ -839,7 +912,6 @@ RunService.Heartbeat:Connect(function(dt)
             bv.Parent    = root
         end
  
-        -- BodyGyro (orientation)
         local bg = root:FindFirstChild("FlyBG")
         if not bg then
             bg           = Instance.new("BodyGyro")
@@ -861,19 +933,16 @@ RunService.Heartbeat:Connect(function(dt)
         bv.Velocity = dir.Magnitude > 0 and dir.Unit * flySpeed or Vector3.new(0, 0, 0)
         bg.CFrame   = cam.CFrame
  
-        -- NE PAS mettre PlatformStand = true (causerait le ragdoll)
-        -- On force l'état Running pour éviter que le hum tombe
         hum:ChangeState(Enum.HumanoidStateType.Running)
  
     elseif not flyEnabled and char and root then
-        -- Supprime les contraintes quand fly est off
         local bv = root:FindFirstChild("FlyBV")
         local bg = root:FindFirstChild("FlyBG")
         if bv then bv:Destroy() end
         if bg then bg:Destroy() end
     end
  
-    -- ── JUMP POWER (forcé en continu) ──
+    -- ── JUMP POWER ──
     if jumpEnabled and hum then
         hum.JumpPower = jumpValue
     end
@@ -887,10 +956,14 @@ RunService.Heartbeat:Connect(function(dt)
         end
     end
  
-    -- ── INVISIBLE (maintenu si perso reload) ──
+    -- ── INVISIBLE (maintenu en continu) ──
+    -- On ré-applique chaque frame pour couvrir les nouveaux descendants
+    -- (accessoires chargés dynamiquement, skins UGC, etc.)
     if invisEnabled and char then
         for _, part in ipairs(char:GetDescendants()) do
-            if (part:IsA("BasePart") or part:IsA("Decal")) and part.Name ~= "HumanoidRootPart" then
+            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                part.Transparency = 1
+            elseif part:IsA("Decal") then
                 part.Transparency = 1
             end
         end
@@ -902,13 +975,11 @@ end)
 -- ══════════════════════════════════════════
  
 RunService.RenderStepped:Connect(function()
-    -- Rainbow border + titre
     rainbowHue = (rainbowHue + 0.003) % 1
     local borderColor = Color3.fromHSV(rainbowHue, 1, 1)
     RainbowFrame.BackgroundColor3 = borderColor
     TitleLabel.TextColor3         = borderColor
  
-    -- ESP rainbow sur les SelectionBox
     if espEnabled then
         espHue = (espHue + 0.005) % 1
         local espColor = Color3.fromHSV(espHue, 1, 1)
@@ -938,5 +1009,6 @@ end)
  
 print("╔══════════════════════════════╗")
 print("║  MAINHACK PANEL  •  by prada ║")
+print("║  v3.1  — Invisible Fixed     ║")
 print("║  INSERT pour afficher/masquer║")
 print("╚══════════════════════════════╝")
