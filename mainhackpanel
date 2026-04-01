@@ -1,6 +1,6 @@
 -- ╔══════════════════════════════════════════╗
 -- ║       MAINHACK PANEL  •  by prada        ║
--- ║         Version 3.4 — All Fixed          ║
+-- ║         Version 3.5 — Skin Tab           ║
 -- ╚══════════════════════════════════════════╝
  
 local Players          = game:GetService("Players")
@@ -36,7 +36,6 @@ local espHue         = 0
 local creditsHue     = 0
 local lastRespawn    = 0
  
--- Stocke les highlights ESP
 local espObjects = {}
  
 -- ══════════════════════════════════════════
@@ -57,7 +56,6 @@ ScreenGui.ResetOnSpawn   = false
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.Parent         = game.CoreGui
  
--- ── Bordure rainbow ──
 local RainbowFrame = Instance.new("Frame")
 RainbowFrame.Name                 = "RainbowFrame"
 RainbowFrame.Size                 = UDim2.new(0, 0, 0, 0)
@@ -70,7 +68,6 @@ RainbowFrame.Draggable            = true
 RainbowFrame.Parent               = ScreenGui
 Instance.new("UICorner", RainbowFrame).CornerRadius = UDim.new(0, 12)
  
--- ── Fond principal ──
 local MainFrame = Instance.new("Frame")
 MainFrame.Size                 = UDim2.new(1, -4, 1, -4)
 MainFrame.Position             = UDim2.new(0, 2, 0, 2)
@@ -80,7 +77,6 @@ MainFrame.BorderSizePixel      = 0
 MainFrame.Parent               = RainbowFrame
 Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
  
--- ── Header ──
 local Header = Instance.new("Frame")
 Header.Size                 = UDim2.new(1, 0, 0, 52)
 Header.BackgroundColor3     = Color3.fromRGB(18, 18, 26)
@@ -113,7 +109,7 @@ local SubTitle = Instance.new("TextLabel")
 SubTitle.Size             = UDim2.new(1, 0, 0, 16)
 SubTitle.Position         = UDim2.new(0, 0, 0, 34)
 SubTitle.BackgroundTransparency = 1
-SubTitle.Text             = "by prada  •  v3.4"
+SubTitle.Text             = "by prada  •  v3.5"
 SubTitle.TextColor3       = Color3.fromRGB(110, 110, 140)
 SubTitle.TextTransparency = 1
 SubTitle.TextSize         = 11
@@ -121,7 +117,6 @@ SubTitle.Font             = Enum.Font.Gotham
 SubTitle.TextXAlignment   = Enum.TextXAlignment.Center
 SubTitle.Parent           = Header
  
--- ── Tabs ──
 local TabsFrame = Instance.new("Frame")
 TabsFrame.Size                 = UDim2.new(1, -20, 0, 34)
 TabsFrame.Position             = UDim2.new(0, 10, 0, 58)
@@ -138,7 +133,6 @@ TabsLayout.VerticalAlignment    = Enum.VerticalAlignment.Center
 TabsLayout.HorizontalAlignment  = Enum.HorizontalAlignment.Center
 TabsLayout.Parent               = TabsFrame
  
--- ── ScrollingFrame contenu ──
 local ContentFrame = Instance.new("ScrollingFrame")
 ContentFrame.Size                 = UDim2.new(1, -20, 1, -110)
 ContentFrame.Position             = UDim2.new(0, 10, 0, 100)
@@ -179,16 +173,13 @@ local function playOpenAnimation()
     RainbowFrame.Position             = UDim2.new(0.5, 0, 0.5, 0)
     RainbowFrame.BackgroundTransparency = 1
     RainbowFrame.Visible              = true
- 
     ContentFrame.Visible = false
     TabsFrame.Visible    = false
- 
     TweenService:Create(RainbowFrame, TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
         Size     = UDim2.new(0, 430, 0, 490),
         Position = UDim2.new(0.5, -215, 0.5, -245),
         BackgroundTransparency = 0,
     }):Play()
- 
     task.delay(0.15, function()
         for _, t in ipairs(getAllFadables()) do
             TweenService:Create(t.obj, TweenInfo.new(0.25), {[t.prop] = t.open}):Play()
@@ -203,11 +194,9 @@ end
 local function playCloseAnimation()
     ContentFrame.Visible = false
     TabsFrame.Visible    = false
- 
     for _, t in ipairs(getAllFadables()) do
         TweenService:Create(t.obj, TweenInfo.new(0.12), {[t.prop] = t.close}):Play()
     end
- 
     task.delay(0.08, function()
         TweenService:Create(RainbowFrame, TweenInfo.new(0.28, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
             Size     = UDim2.new(0, 0, 0, 0),
@@ -232,12 +221,12 @@ local tabButtons  = {}
  
 local function createTab(name, icon)
     local btn = Instance.new("TextButton")
-    btn.Size             = UDim2.new(0, 95, 0, 26)
+    btn.Size             = UDim2.new(0, 78, 0, 26)
     btn.BackgroundColor3 = Color3.fromRGB(32, 32, 46)
     btn.BorderSizePixel  = 0
     btn.Text             = icon .. " " .. name
     btn.TextColor3       = Color3.fromRGB(160, 160, 185)
-    btn.TextSize         = 13
+    btn.TextSize         = 12
     btn.Font             = Enum.Font.GothamSemibold
     btn.Parent           = TabsFrame
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
@@ -279,7 +268,6 @@ local function createSection(parent, title)
     sec.BorderSizePixel  = 0
     sec.Parent           = parent
     Instance.new("UICorner", sec).CornerRadius = UDim.new(0, 6)
- 
     local lbl = Instance.new("TextLabel")
     lbl.Size             = UDim2.new(1, -10, 1, 0)
     lbl.Position         = UDim2.new(0, 10, 0, 0)
@@ -299,7 +287,6 @@ local function createToggle(parent, labelText, callback)
     row.BorderSizePixel  = 0
     row.Parent           = parent
     Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
- 
     local lbl = Instance.new("TextLabel")
     lbl.Size             = UDim2.new(1, -62, 1, 0)
     lbl.Position         = UDim2.new(0, 12, 0, 0)
@@ -310,7 +297,6 @@ local function createToggle(parent, labelText, callback)
     lbl.Font             = Enum.Font.Gotham
     lbl.TextXAlignment   = Enum.TextXAlignment.Left
     lbl.Parent           = row
- 
     local bg = Instance.new("Frame")
     bg.Size             = UDim2.new(0, 44, 0, 22)
     bg.Position         = UDim2.new(1, -54, 0.5, -11)
@@ -318,7 +304,6 @@ local function createToggle(parent, labelText, callback)
     bg.BorderSizePixel  = 0
     bg.Parent           = row
     Instance.new("UICorner", bg).CornerRadius = UDim.new(1, 0)
- 
     local circle = Instance.new("Frame")
     circle.Size             = UDim2.new(0, 16, 0, 16)
     circle.Position         = UDim2.new(0, 3, 0.5, -8)
@@ -326,9 +311,7 @@ local function createToggle(parent, labelText, callback)
     circle.BorderSizePixel  = 0
     circle.Parent           = bg
     Instance.new("UICorner", circle).CornerRadius = UDim.new(1, 0)
- 
     local toggled = false
- 
     local function set(state)
         toggled = state
         if state then
@@ -340,11 +323,9 @@ local function createToggle(parent, labelText, callback)
         end
         callback(state)
     end
- 
     bg.InputBegan:Connect(function(inp)
         if inp.UserInputType == Enum.UserInputType.MouseButton1 then set(not toggled) end
     end)
- 
     return row, set
 end
  
@@ -355,7 +336,6 @@ local function createSlider(parent, labelText, minVal, maxVal, defaultVal, callb
     row.BorderSizePixel  = 0
     row.Parent           = parent
     Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
- 
     local lbl = Instance.new("TextLabel")
     lbl.Size             = UDim2.new(1, -72, 0, 24)
     lbl.Position         = UDim2.new(0, 12, 0, 4)
@@ -366,7 +346,6 @@ local function createSlider(parent, labelText, minVal, maxVal, defaultVal, callb
     lbl.Font             = Enum.Font.Gotham
     lbl.TextXAlignment   = Enum.TextXAlignment.Left
     lbl.Parent           = row
- 
     local valLbl = Instance.new("TextLabel")
     valLbl.Size             = UDim2.new(0, 62, 0, 24)
     valLbl.Position         = UDim2.new(1, -70, 0, 4)
@@ -377,7 +356,6 @@ local function createSlider(parent, labelText, minVal, maxVal, defaultVal, callb
     valLbl.Font             = Enum.Font.GothamBold
     valLbl.TextXAlignment   = Enum.TextXAlignment.Right
     valLbl.Parent           = row
- 
     local track = Instance.new("Frame")
     track.Size             = UDim2.new(1, -24, 0, 8)
     track.Position         = UDim2.new(0, 12, 0, 38)
@@ -385,16 +363,13 @@ local function createSlider(parent, labelText, minVal, maxVal, defaultVal, callb
     track.BorderSizePixel  = 0
     track.Parent           = row
     Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
- 
     local pct0 = math.clamp((defaultVal - minVal) / (maxVal - minVal), 0, 1)
- 
     local fill = Instance.new("Frame")
     fill.Size             = UDim2.new(pct0, 0, 1, 0)
     fill.BackgroundColor3 = Color3.fromRGB(75, 75, 195)
     fill.BorderSizePixel  = 0
     fill.Parent           = track
     Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
- 
     local knob = Instance.new("Frame")
     knob.Size             = UDim2.new(0, 16, 0, 16)
     knob.Position         = UDim2.new(pct0, -8, 0.5, -8)
@@ -403,7 +378,6 @@ local function createSlider(parent, labelText, minVal, maxVal, defaultVal, callb
     knob.ZIndex           = 3
     knob.Parent           = track
     Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
- 
     local hitbox = Instance.new("TextButton")
     hitbox.Size               = UDim2.new(1, 0, 0, 30)
     hitbox.Position           = UDim2.new(0, 0, 0.5, -15)
@@ -411,9 +385,7 @@ local function createSlider(parent, labelText, minVal, maxVal, defaultVal, callb
     hitbox.Text               = ""
     hitbox.ZIndex             = 4
     hitbox.Parent             = track
- 
     local dragging = false
- 
     local function applyMouse()
         local abs  = track.AbsolutePosition.X
         local size = track.AbsoluteSize.X
@@ -424,22 +396,18 @@ local function createSlider(parent, labelText, minVal, maxVal, defaultVal, callb
         knob.Position = UDim2.new(p, -8, 0.5, -8)
         callback(val)
     end
- 
     hitbox.MouseButton1Down:Connect(function()
         dragging = true
         applyMouse()
     end)
- 
     UserInputService.InputEnded:Connect(function(inp)
         if inp.UserInputType == Enum.UserInputType.MouseButton1 then
             dragging = false
         end
     end)
- 
     RunService.RenderStepped:Connect(function()
         if dragging then applyMouse() end
     end)
- 
     return row
 end
  
@@ -454,7 +422,6 @@ local function createButton(parent, labelText, callback)
     btn.Font             = Enum.Font.GothamSemibold
     btn.Parent           = parent
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
- 
     btn.MouseEnter:Connect(function() TweenService:Create(btn, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(80, 80, 210)}):Play() end)
     btn.MouseLeave:Connect(function() TweenService:Create(btn, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(55, 55, 155)}):Play() end)
     btn.MouseButton1Click:Connect(callback)
@@ -468,6 +435,7 @@ end
 local miscContent     = createTab("Misc",    "⚙")
 local gameContent     = createTab("Game",    "🎮")
 local trollContent    = createTab("Troll",   "😈")
+local skinAnimContent = createTab("Skin",    "🎭")
 local creditsContent  = createTab("Credits", "★")
  
 tabContents["Misc"].Visible    = true
@@ -481,14 +449,12 @@ tabButtons["Misc"].TextColor3       = Color3.fromRGB(255, 255, 255)
  
 createSection(miscContent, "Mouvements")
  
--- ── FLY ──
 local flyRow, flySet = createToggle(miscContent, "✈  Fly", function(state)
     flyEnabled = state
     local char = LocalPlayer.Character
     if not char or not char.PrimaryPart then return end
     local root = char.PrimaryPart
     local hum  = char:FindFirstChildOfClass("Humanoid")
- 
     if not state then
         if root:FindFirstChild("FlyBV") then root:FindFirstChild("FlyBV"):Destroy() end
         if root:FindFirstChild("FlyBG") then root:FindFirstChild("FlyBG"):Destroy() end
@@ -503,7 +469,6 @@ createSlider(miscContent, "Vitesse Fly", 10, 300, 50, function(val)
     flySpeed = val
 end)
  
--- ── SPEED ──
 local speedRow, speedSet = createToggle(miscContent, "⚡  Speed Boost", function(state)
     speedEnabled = state
     local char = LocalPlayer.Character
@@ -524,7 +489,6 @@ createSlider(miscContent, "Vitesse Walk", 16, 500, 60, function(val)
     end
 end)
  
--- ── JUMP POWER ──
 local jumpRow, jumpSet = createToggle(miscContent, "🦘  Jump Power", function(state)
     jumpEnabled = state
     local char = LocalPlayer.Character
@@ -547,14 +511,12 @@ createSlider(miscContent, "Hauteur Jump", 50, 500, 150, function(val)
     end
 end)
  
--- ── ANTI AFK ──
 createSection(miscContent, "Utilitaires")
  
 local antiAfkRow, antiAfkSet = createToggle(miscContent, "💤  Anti AFK", function(state)
     antiAfkEnabled = state
 end)
  
--- Anti-AFK : simule un mouvement toutes les 2 min via VirtualUser
 local antiAfkTimer = 0
 RunService.Heartbeat:Connect(function(dt)
     if antiAfkEnabled then
@@ -569,22 +531,16 @@ RunService.Heartbeat:Connect(function(dt)
     end
 end)
  
--- ── VOID (téléporte sous la map) ──
 local voidRow, voidSet = createToggle(miscContent, "🕳  Void Kill", function(state)
     if state then
         local char = LocalPlayer.Character
         if char and char.PrimaryPart then
             char:SetPrimaryPartCFrame(CFrame.new(char.PrimaryPart.Position + Vector3.new(0, -5000, 0)))
         end
-        -- On désactive immédiatement le toggle (action one-shot)
         task.defer(function() voidSet(false) end)
     end
 end)
  
--- ── AIMLOCK ──
--- Touche Q (AZERTY) = KeyCode.Q
--- Premier appui : lock la cible la plus proche
--- Deuxième appui : délock (toggle)
 createSection(miscContent, "Combat")
  
 local aimlockRow, aimlockSet = createToggle(miscContent, "🎯  Aimlock  [Q]", function(state)
@@ -594,22 +550,18 @@ local aimlockRow, aimlockSet = createToggle(miscContent, "🎯  Aimlock  [Q]", f
     end
 end)
  
--- Q = toggle lock/unlock
 UserInputService.InputBegan:Connect(function(inp, gpe)
     if gpe then return end
     if inp.KeyCode == Enum.KeyCode.Q and aimlockEnabled then
-        -- Si déjà une cible lockée → délock
         if aimlockTarget then
             aimlockTarget = nil
             return
         end
-        -- Sinon → cherche la cible la plus proche du centre écran
         local cam      = workspace.CurrentCamera
         local vpSize   = cam.ViewportSize
         local center   = Vector2.new(vpSize.X / 2, vpSize.Y / 2)
         local bestDist = math.huge
         local bestPlr  = nil
- 
         for _, plr in ipairs(Players:GetPlayers()) do
             if plr ~= LocalPlayer and plr.Character then
                 local head = plr.Character:FindFirstChild("Head")
@@ -625,12 +577,10 @@ UserInputService.InputBegan:Connect(function(inp, gpe)
                 end
             end
         end
- 
         aimlockTarget = bestPlr
     end
 end)
  
--- ── ESP RAINBOW ──
 createSection(miscContent, "ESP")
  
 local function clearESP()
@@ -692,16 +642,12 @@ local noclipRow, noclipSet = createToggle(gameContent, "👻  Noclip", function(
     noclipEnabled = state
 end)
  
--- ── RESPAWN FIXÉ ──
--- Anti-spam : cooldown de 3 secondes
 createButton(gameContent, "🔄  Respawn", function()
     local now = tick()
     if now - lastRespawn < 3 then return end
     lastRespawn = now
-    -- Méthode propre : on détruit le character, Roblox le respawn automatiquement
     local char = LocalPlayer.Character
     if char then
-        -- Désactive les features actives avant respawn
         flyEnabled    = false
         speedEnabled  = false
         jumpEnabled   = false
@@ -732,14 +678,6 @@ infoLbl.Text             = "  Pos: —  |  Joueurs: —"
 infoLbl.Parent           = gameContent
 Instance.new("UICorner", infoLbl).CornerRadius = UDim.new(0, 8)
  
--- ══════════════════════════════════════════
---   SKIN CHANGER (visible uniquement par toi)
--- ══════════════════════════════════════════
--- Charge le HumanoidDescription d'un autre joueur et l'applique
--- LOCALEMENT sur ton perso via ApplyDescriptionReset.
--- Les autres ne voient pas le changement — uniquement toi.
--- ══════════════════════════════════════════
- 
 createSection(gameContent, "Skin Changer  (local)")
  
 local skinStatusLbl = Instance.new("TextLabel")
@@ -752,7 +690,6 @@ skinStatusLbl.Font             = Enum.Font.Gotham
 skinStatusLbl.TextXAlignment   = Enum.TextXAlignment.Left
 skinStatusLbl.Parent           = gameContent
  
--- Champ texte pseudo
 local skinInputRow = Instance.new("Frame")
 skinInputRow.Size             = UDim2.new(1, 0, 0, 36)
 skinInputRow.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
@@ -811,34 +748,25 @@ skinApplyBtn.MouseButton1Click:Connect(function()
         skinFeedbackLbl.Text = "⚠ Entre un pseudo !"
         return
     end
- 
     skinFeedbackLbl.TextColor3 = Color3.fromRGB(200, 200, 100)
     skinFeedbackLbl.Text = "⏳ Chargement..."
- 
     task.spawn(function()
-        -- Récupère l'UserId depuis le pseudo
         local success, userId = pcall(function()
             return Players:GetUserIdFromNameAsync(username)
         end)
- 
         if not success or not userId then
             skinFeedbackLbl.TextColor3 = Color3.fromRGB(220, 80, 80)
             skinFeedbackLbl.Text = "⚠ Joueur introuvable"
             return
         end
- 
-        -- Récupère le HumanoidDescription du joueur cible
         local ok, desc = pcall(function()
             return Players:GetHumanoidDescriptionFromUserId(userId)
         end)
- 
         if not ok or not desc then
             skinFeedbackLbl.TextColor3 = Color3.fromRGB(220, 80, 80)
             skinFeedbackLbl.Text = "⚠ Impossible de charger le skin"
             return
         end
- 
-        -- Applique localement sur notre perso
         local char = LocalPlayer.Character
         if char then
             local hum = char:FindFirstChildOfClass("Humanoid")
@@ -873,13 +801,6 @@ createButton(gameContent, "↩  Reset mon skin", function()
     end
 end)
  
--- ══════════════════════════════════════════
---   MORPH (visible par tout le monde)
--- ══════════════════════════════════════════
--- Modifie la taille/proportions du perso via HumanoidDescription.
--- Appliqué via ApplyDescriptionReset → répliqué côté serveur → visible par tous.
--- ══════════════════════════════════════════
- 
 createSection(gameContent, "Morph  (visible par tous)")
  
 local morphPresets = {
@@ -906,7 +827,6 @@ local function applyMorph(preset)
     end)
 end
  
--- Grille 2 colonnes pour les presets
 local morphGrid = Instance.new("Frame")
 morphGrid.Size             = UDim2.new(1, 0, 0, 0)
 morphGrid.BackgroundTransparency = 1
@@ -930,7 +850,6 @@ for _, preset in ipairs(morphPresets) do
     btn.Font             = Enum.Font.GothamSemibold
     btn.Parent           = morphGrid
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
- 
     btn.MouseEnter:Connect(function()
         TweenService:Create(btn, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(65, 65, 130)}):Play()
     end)
@@ -975,7 +894,6 @@ local function refreshPlayerList()
     for _, child in ipairs(playerListFrame:GetChildren()) do
         if child:IsA("Frame") then child:Destroy() end
     end
- 
     for _, plr in ipairs(Players:GetPlayers()) do
         if plr ~= LocalPlayer then
             local row = Instance.new("Frame")
@@ -984,7 +902,6 @@ local function refreshPlayerList()
             row.BorderSizePixel  = 0
             row.Parent           = playerListFrame
             Instance.new("UICorner", row).CornerRadius = UDim.new(0, 8)
- 
             local nameLbl = Instance.new("TextLabel")
             nameLbl.Size             = UDim2.new(1, -162, 1, 0)
             nameLbl.Position         = UDim2.new(0, 10, 0, 0)
@@ -995,7 +912,6 @@ local function refreshPlayerList()
             nameLbl.Font             = Enum.Font.Gotham
             nameLbl.TextXAlignment   = Enum.TextXAlignment.Left
             nameLbl.Parent           = row
- 
             local tpBtn = Instance.new("TextButton")
             tpBtn.Size             = UDim2.new(0, 42, 0, 24)
             tpBtn.Position         = UDim2.new(1, -158, 0.5, -12)
@@ -1007,7 +923,6 @@ local function refreshPlayerList()
             tpBtn.Font             = Enum.Font.GothamBold
             tpBtn.Parent           = row
             Instance.new("UICorner", tpBtn).CornerRadius = UDim.new(0, 6)
- 
             local specBtn = Instance.new("TextButton")
             specBtn.Size             = UDim2.new(0, 76, 0, 24)
             specBtn.Position         = UDim2.new(1, -108, 0.5, -12)
@@ -1019,7 +934,6 @@ local function refreshPlayerList()
             specBtn.Font             = Enum.Font.GothamBold
             specBtn.Parent           = row
             Instance.new("UICorner", specBtn).CornerRadius = UDim.new(0, 6)
- 
             tpBtn.MouseButton1Click:Connect(function()
                 local char  = LocalPlayer.Character
                 local tChar = plr.Character
@@ -1027,7 +941,6 @@ local function refreshPlayerList()
                     char:SetPrimaryPartCFrame(tChar.PrimaryPart.CFrame + Vector3.new(0, 3, 0))
                 end
             end)
- 
             specBtn.MouseButton1Click:Connect(function()
                 if spectateConn then spectateConn:Disconnect() end
                 spectating = true
@@ -1048,9 +961,7 @@ Players.PlayerAdded:Connect(refreshPlayerList)
 Players.PlayerRemoving:Connect(refreshPlayerList)
  
 createSection(trollContent, "Actions")
- 
 createButton(trollContent, "🔃  Actualiser la liste", refreshPlayerList)
- 
 createButton(trollContent, "⛔  Stop Spectate", function()
     if spectateConn then spectateConn:Disconnect() end
     spectateConn = nil
@@ -1063,37 +974,6 @@ end)
  
 createSection(trollContent, "Invisible")
  
--- ══════════════════════════════════════════
---     INVISIBLE FIXÉ — v3.1
--- ══════════════════════════════════════════
---
--- Le problème de l'ancienne version :
---   • Elle ne rendait pas transparents les accessoires (chapeaux, vêtements,
---     outils) car ils sont dans des sous-dossiers Accessory > Handle.
---   • Elle ne gérait pas les MeshPart ni les Part portant un SurfaceAppearance.
---   • Les autres joueurs voyaient quand même le perso à cause des parts non
---     traitées (ex: RootAttachment, welds, etc.) et des objets respawnés.
---
--- Correction v3.1 :
---   • On parcourt TOUS les descendants (GetDescendants) du Character.
---   • On rend transparent tout ce qui est BasePart (Part, MeshPart, UnionOperation,
---     SpecialMesh inclus via son parent) SAUF HumanoidRootPart.
---   • On rend transparent aussi les Decal et les SurfaceAppearance.
---   • On maintient l'invisibilité en continu via Heartbeat pour survivre
---     à n'importe quel chargement de mesh ou reload de skin.
---   • On restore correctement la transparence originale à la désactivation.
--- ══════════════════════════════════════════
- 
--- ══════════════════════════════════════════
---     INVISIBLE FIXÉ v3.2 — SKIN SOUS LA MAP
--- ══════════════════════════════════════════
---
--- Technique : on crée un clone visuel du perso qu'on téléporte sous la map
--- (Y = -5000) pour que les autres voient le skin là-bas, et on rend le vrai
--- perso complètement transparent. Le vrai perso reste jouable normalement.
--- À la désactivation, le clone est détruit et le perso redevient visible.
--- ══════════════════════════════════════════
- 
 local skinClone = nil
  
 local function destroyClone()
@@ -1105,18 +985,14 @@ end
  
 local function createSkinClone(char)
     destroyClone()
-    -- Clone le character
     local clone = char:Clone()
-    -- Supprime les scripts du clone pour éviter qu'il bouge tout seul
     for _, s in ipairs(clone:GetDescendants()) do
         if s:IsA("Script") or s:IsA("LocalScript") or s:IsA("ModuleScript") then
             s:Destroy()
         end
     end
-    -- Supprime humanoid pour éviter les states
     local cloneHum = clone:FindFirstChildOfClass("Humanoid")
     if cloneHum then cloneHum:Destroy() end
-    -- Désancre toutes les parts du clone + supprime CanCollide
     for _, p in ipairs(clone:GetDescendants()) do
         if p:IsA("BasePart") then
             p.Anchored    = true
@@ -1125,11 +1001,9 @@ local function createSkinClone(char)
     end
     clone.Name   = "SkinClone_MHP"
     clone.Parent = workspace
-    -- Téléporte le clone sous la map
     if clone.PrimaryPart then
         clone:SetPrimaryPartCFrame(CFrame.new(0, -5000, 0))
     else
-        -- Fallback si pas de PrimaryPart
         local root = clone:FindFirstChild("HumanoidRootPart")
         if root then root.CFrame = CFrame.new(0, -5000, 0) end
     end
@@ -1150,7 +1024,6 @@ local function applyInvisible(char)
             part.Transparency = 1
         end
     end
-    -- Crée le clone visible sous la map
     createSkinClone(char)
 end
  
@@ -1178,6 +1051,111 @@ local invisRow, invisSet = createToggle(trollContent, "👁  Invisible", functio
 end)
  
 -- ══════════════════════════════════════════
+--         ONGLET SKIN — ANIMATIONS
+-- ══════════════════════════════════════════
+ 
+createSection(skinAnimContent, "Animations")
+ 
+local animStatusLbl = Instance.new("TextLabel")
+animStatusLbl.Size             = UDim2.new(1, 0, 0, 22)
+animStatusLbl.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+animStatusLbl.BorderSizePixel  = 0
+animStatusLbl.TextColor3       = Color3.fromRGB(160, 160, 190)
+animStatusLbl.TextSize         = 11
+animStatusLbl.Font             = Enum.Font.Gotham
+animStatusLbl.TextXAlignment   = Enum.TextXAlignment.Center
+animStatusLbl.TextWrapped      = true
+animStatusLbl.Text             = "Aucune animation active"
+animStatusLbl.Parent           = skinAnimContent
+Instance.new("UICorner", animStatusLbl).CornerRadius = UDim.new(0, 6)
+ 
+local currentAnimTrack = nil
+ 
+local function playAnim(animId, name)
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+    local animator = hum:FindFirstChildOfClass("Animator")
+    if not animator then return end
+ 
+    -- Stop l'animation en cours
+    if currentAnimTrack then
+        pcall(function() currentAnimTrack:Stop() end)
+        currentAnimTrack = nil
+    end
+ 
+    local anim = Instance.new("Animation")
+    anim.AnimationId = "rbxassetid://" .. animId
+ 
+    local ok, track = pcall(function()
+        return animator:LoadAnimation(anim)
+    end)
+ 
+    if ok and track then
+        track.Looped = true
+        track:Play()
+        currentAnimTrack = track
+        animStatusLbl.Text      = "▶ " .. name
+        animStatusLbl.TextColor3 = Color3.fromRGB(100, 220, 100)
+    else
+        animStatusLbl.Text      = "⚠ Erreur de chargement"
+        animStatusLbl.TextColor3 = Color3.fromRGB(220, 80, 80)
+    end
+end
+ 
+-- ── Liste des animations ──
+local animations = {
+    {name = "🧟  Zombie",       id = "616163682"},
+    {name = "👟  Adidas Walk",  id = "658830056"},
+    {name = "🏃  Adidas Run",   id = "658830563"},
+    {name = "🕴  Adidas Idle",  id = "658829413"},
+}
+ 
+local animGrid = Instance.new("Frame")
+animGrid.Size             = UDim2.new(1, 0, 0, 0)
+animGrid.BackgroundTransparency = 1
+animGrid.AutomaticSize    = Enum.AutomaticSize.Y
+animGrid.Parent           = skinAnimContent
+ 
+local animGridLayout = Instance.new("UIGridLayout")
+animGridLayout.CellSize    = UDim2.new(0.5, -4, 0, 38)
+animGridLayout.CellPadding = UDim2.new(0, 4, 0, 4)
+animGridLayout.SortOrder   = Enum.SortOrder.LayoutOrder
+animGridLayout.Parent      = animGrid
+ 
+for _, animData in ipairs(animations) do
+    local a = animData
+    local btn = Instance.new("TextButton")
+    btn.BackgroundColor3 = Color3.fromRGB(38, 38, 60)
+    btn.BorderSizePixel  = 0
+    btn.Text             = a.name
+    btn.TextColor3       = Color3.fromRGB(205, 205, 230)
+    btn.TextSize         = 12
+    btn.Font             = Enum.Font.GothamSemibold
+    btn.Parent           = animGrid
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 7)
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(65, 65, 130)}):Play()
+    end)
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.12), {BackgroundColor3 = Color3.fromRGB(38, 38, 60)}):Play()
+    end)
+    btn.MouseButton1Click:Connect(function()
+        playAnim(a.id, a.name)
+    end)
+end
+ 
+createButton(skinAnimContent, "⛔  Stop Animation", function()
+    if currentAnimTrack then
+        pcall(function() currentAnimTrack:Stop() end)
+        currentAnimTrack = nil
+    end
+    animStatusLbl.Text       = "Aucune animation active"
+    animStatusLbl.TextColor3 = Color3.fromRGB(160, 160, 190)
+end)
+ 
+-- ══════════════════════════════════════════
 --       RESET AU RESPAWN
 -- ══════════════════════════════════════════
  
@@ -1190,15 +1168,16 @@ LocalPlayer.CharacterAdded:Connect(function(char)
     aimlockEnabled = false
     aimlockTarget  = nil
     savedTransparency = {}
+    currentAnimTrack  = nil
     destroyClone()
- 
     flySet(false)
     speedSet(false)
     jumpSet(false)
     noclipSet(false)
     invisSet(false)
     aimlockSet(false)
- 
+    animStatusLbl.Text       = "Aucune animation active"
+    animStatusLbl.TextColor3 = Color3.fromRGB(160, 160, 190)
     if espEnabled then
         task.wait(1)
         setupESP()
@@ -1214,16 +1193,13 @@ RunService.Heartbeat:Connect(function(dt)
     local hum  = char and char:FindFirstChildOfClass("Humanoid")
     local root = char and char.PrimaryPart
  
-    -- Infos position
     if root then
         local p = root.Position
         infoLbl.Text = string.format("  Pos: %.1f, %.1f, %.1f  |  Joueurs: %d", p.X, p.Y, p.Z, #Players:GetPlayers())
     end
  
-    -- ── FLY ──
     if flyEnabled and char and root and hum then
         local cam = workspace.CurrentCamera
- 
         local bv = root:FindFirstChild("FlyBV")
         if not bv then
             bv           = Instance.new("BodyVelocity")
@@ -1232,7 +1208,6 @@ RunService.Heartbeat:Connect(function(dt)
             bv.Velocity  = Vector3.new(0, 0, 0)
             bv.Parent    = root
         end
- 
         local bg = root:FindFirstChild("FlyBG")
         if not bg then
             bg           = Instance.new("BodyGyro")
@@ -1242,7 +1217,6 @@ RunService.Heartbeat:Connect(function(dt)
             bg.D         = 800
             bg.Parent    = root
         end
- 
         local dir = Vector3.new()
         if UserInputService:IsKeyDown(Enum.KeyCode.W)         then dir = dir + cam.CFrame.LookVector  end
         if UserInputService:IsKeyDown(Enum.KeyCode.S)         then dir = dir - cam.CFrame.LookVector  end
@@ -1250,12 +1224,9 @@ RunService.Heartbeat:Connect(function(dt)
         if UserInputService:IsKeyDown(Enum.KeyCode.D)         then dir = dir + cam.CFrame.RightVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.Space)     then dir = dir + Vector3.new(0, 1, 0)  end
         if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir - Vector3.new(0, 1, 0)  end
- 
         bv.Velocity = dir.Magnitude > 0 and dir.Unit * flySpeed or Vector3.new(0, 0, 0)
         bg.CFrame   = cam.CFrame
- 
         hum:ChangeState(Enum.HumanoidStateType.Running)
- 
     elseif not flyEnabled and char and root then
         local bv = root:FindFirstChild("FlyBV")
         local bg = root:FindFirstChild("FlyBG")
@@ -1263,12 +1234,10 @@ RunService.Heartbeat:Connect(function(dt)
         if bg then bg:Destroy() end
     end
  
-    -- ── JUMP POWER ──
     if jumpEnabled and hum then
         hum.JumpPower = jumpValue
     end
  
-    -- ── NOCLIP ──
     if noclipEnabled and char then
         for _, part in ipairs(char:GetDescendants()) do
             if part:IsA("BasePart") then
@@ -1277,9 +1246,6 @@ RunService.Heartbeat:Connect(function(dt)
         end
     end
  
-    -- ── INVISIBLE (maintenu en continu) ──
-    -- On ré-applique chaque frame pour couvrir les nouveaux descendants
-    -- (accessoires chargés dynamiquement, skins UGC, etc.)
     if invisEnabled and char then
         for _, part in ipairs(char:GetDescendants()) do
             if part:IsA("BasePart") then
@@ -1296,7 +1262,6 @@ end)
 -- ══════════════════════════════════════════
  
 RunService.RenderStepped:Connect(function()
-    -- Aimlock : oriente la caméra vers la tête de la cible
     if aimlockEnabled and aimlockTarget then
         local tChar = aimlockTarget.Character
         if tChar then
@@ -1314,13 +1279,11 @@ RunService.RenderStepped:Connect(function()
         end
     end
  
-    -- ── RAINBOW BORDER + TITRE ──
     rainbowHue = (rainbowHue + 0.003) % 1
     local borderColor = Color3.fromHSV(rainbowHue, 1, 1)
     RainbowFrame.BackgroundColor3 = borderColor
     TitleLabel.TextColor3         = borderColor
  
-    -- ── ESP RAINBOW ──
     if espEnabled then
         espHue = (espHue + 0.005) % 1
         local espColor = Color3.fromHSV(espHue, 1, 1)
@@ -1331,7 +1294,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
  
-    -- ── CREDITS RAINBOW ──
     creditsHue = (creditsHue + 0.006) % 1
     if _G.MHP_creditsLabel then
         _G.MHP_creditsLabel.TextColor3 = Color3.fromHSV(creditsHue, 1, 1)
@@ -1373,7 +1335,7 @@ madeByLabel.Parent           = creditsContent
 local versionLabel = Instance.new("TextLabel")
 versionLabel.Size             = UDim2.new(1, 0, 0, 22)
 versionLabel.BackgroundTransparency = 1
-versionLabel.Text             = "v3.2"
+versionLabel.Text             = "v3.5"
 versionLabel.TextColor3       = Color3.fromRGB(75, 75, 120)
 versionLabel.TextSize         = 12
 versionLabel.Font             = Enum.Font.Gotham
@@ -1398,6 +1360,6 @@ end)
  
 print("╔══════════════════════════════╗")
 print("║  MAINHACK PANEL  •  by prada ║")
-print("║  v3.4  — Skin + Morph           ║")
+print("║  v3.5  — +Onglet Skin Anims  ║")
 print("║  INSERT pour afficher/masquer║")
 print("╚══════════════════════════════╝")
