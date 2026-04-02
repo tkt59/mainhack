@@ -860,7 +860,206 @@ for _, preset in ipairs(morphPresets) do
         applyMorph(p)
     end)
 end
- 
+
+-- ══════════════════════════════════════════
+--        SILENT AIM (RenderStepped)
+-- ══════════════════════════════════════════
+
+-- Ajout d'une nouvelle variable pour le Silent Aim
+local silentAimEnabled = false
+local silentAimTarget = nil
+local silentAimColor = Color3.fromRGB(0, 0, 255) -- Couleur bleue pour le contour
+
+-- Ajout d'un nouveau toggle pour le Silent Aim dans l'onglet Misc
+local silentAimRow, silentAimSet = createToggle(miscContent, "🎯 Silent Aim", function(state)
+    silentAimEnabled = state
+    if not state then
+        silentAimTarget = nil
+        -- Si le silent aim est désactivé, on nettoie les contours bleus existants
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer and plr.Character and espObjects[plr.Name] then
+                -- On réinitialise la couleur du contour ESP s'il existe
+                if espObjects[plr.Name].Color3 ~= Color3.fromRGB(255, 0, 0) then -- Ne pas écraser si c'est déjà rouge
+                    espObjects[plr.Name].Color3 = Color3.fromRGB(255, 0, 0)
+                end
+            end
+        end
+    end
+end)
+
+-- Modification du RenderStepped pour inclure le Silent Aim
+RunService.RenderStepped:Connect(function(dt) -- dt est le delta time, utile pour la fluidité des animations
+    -- ... (code existant pour le fly, rainbow, esp, credits) ...
+
+    if aimlockEnabled and aimlockTarget then
+        local tChar = aimlockTarget.Character
+        if tChar then
+            local head = tChar:FindFirstChild("Head")
+            local root = LocalPlayer.Character and LocalPlayer.Character.PrimaryPart
+            if head and root then
+                local cam = workspace.CurrentCamera
+                local dir = (head.Position - cam.CFrame.Position).Unit
+                cam.CFrame = CFrame.new(cam.CFrame.Position, cam.CFrame.Position + dir)
+            else
+                aimlockTarget = nil
+            end
+        else
+            aimlockTarget = nil
+        end
+    end
+
+    -- Logique du Silent Aim
+    if silentAimEnabled then
+        local cam = workspace.CurrentCamera
+        local vpSize = cam.ViewportSize
+        local center = Vector2.new(vpSize.X / 2, vpSize.Y / 2)
+        local bestDist = math.huge
+        local potentialTarget = nil
+
+        -- Recherche du joueur le plus proche du centre de l'écran
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer and plr.Character then
+                local head = plr.Character:FindFirstChild("Head")
+                if head then
+                    local screenPos, onScreen = cam:WorldToScreenPoint(head.Position)
+                    if onScreen then
+                        local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
+                        if dist < bestDist then
+                            bestDist = dist
+                            potentialTarget = plr
+                        end
+                    end
+                end
+            end
+        end
+
+        silentAimTarget = potentialTarget
+
+        -- Application du contour bleu si un cible est trouvée
+        if silentAimTarget then
+            local targetChar = silentAimTarget.Character
+            if targetChar then
+                local head = targetChar:FindFirstChild("Head")
+                if head then
+                    -- On crée ou on met à jour le SelectionBox pour le contour bleu
+                    local outline = espObjects[silentAimTarget.Name]
+                    if not outline then
+                        outline = Instance.new("SelectionBox")
+                        outline.Adornee = targetChar
+                        outline.LineThickness = 0.06
+                        outline.SurfaceTransparency = 0.6 -- Légèrement transparent pour voir le joueur
+                        outline.Color3 = silentAimColor
+                        outline.Parent = game.CoreGui
+                        espObjects[silentAimTarget.Name] = outline
+                    else
+                        -- S'assurer que l'adornee est toujours le bon personnage
+                        outline.Adornee = targetChar
+                        outline.Color3 = silentAimColor
+                        outline.SurfaceTransparency = 0.6
+                    end
+                end
+            end
+        end
+
+        -- Si le silent aim est actif, mais qu'il n'y a pas de cible, on s'assure que les contours des autres joueurs redeviennent normaux (rouge si ESP est activé)
+        if not silentAimTarget then
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if plr ~= LocalPlayer and plr.Character and espObjects[plr.Name] then
+                    -- On ne change la couleur que si elle n'est pas déjà la couleur par défaut de l'ESP
+                    if espObjects[plr.Name].Color3 ~= Color3.fromRGB(255, 0, 0) then
+                        espObjects[plr.Name].Color3 = Color3.fromRGB(255, 0, 0)
+                        espObjects[plr.Name].SurfaceTransparency = 1 -- Réinitialiser la transparence à celle par défaut de l'ESP
+                    end
+                end
+            end
+        end
+    end
+
+    rainbowHue = (rainbowHue + 0.003) % 1
+    local borderColor = Color3.fromHSV(rainbowHue, 1, 1)
+    RainbowFrame.BackgroundColor3 = borderColor
+    TitleLabel.TextColor3         = borderColor
+
+    if espEnabled then
+        espHue = (espHue + 0.005) % 1
+        local espColor = Color3.fromHSV(espHue, 1, 1)
+        for name, hl in pairs(espObjects) do
+            -- Vérifier si le joueur est toujours valide et si ce n'est pas une cible de silent aim active
+            local plr = Players:FindFirstChild(name)
+            local isSilentAimTarget = silentAimEnabled and silentAimTarget and silentAimTarget.Name == name
+            if plr and plr.Character and hl and not isSilentAimTarget then
+                pcall(function()
+                    hl.Color3 = espColor
+                    hl.SurfaceTransparency = 1 -- S'assurer que la transparence de l'ESP est à 1
+                end)
+            elseif not plr or not plr.Character then
+                -- Nettoyer si le joueur n'est plus valide
+                pcall(function() hl:Destroy() end)
+                espObjects[name] = nil
+            end
+        end
+    end
+
+    creditsHue = (creditsHue + 0.006) % 1
+    if _G.MHP_creditsLabel then
+        _G.MHP_creditsLabel.TextColor3 = Color3.fromHSV(creditsHue, 1, 1)
+    end
+end)
+
+-- Modification du Heartbeat pour la logique de déplacement et de noclip/invis
+RunService.Heartbeat:Connect(function(dt)
+    -- ... (code existant pour les infos, fly, jump, noclip, invis) ...
+
+    if noclipEnabled and char then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+
+    if invisEnabled and char then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.Transparency = 1
+            elseif part:IsA("Decal") then
+                part.Transparency = 1
+            end
+        end
+    end
+
+    -- Si noclip ou invis est désactivé, on réinitialise les propriétés
+    if not noclipEnabled and char then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
+    if not invisEnabled and char then
+        restoreVisible(char) -- Utilise la fonction existante pour restaurer
+    end
+end)
+
+-- Modification de la gestion du personnage ajouté pour le Silent Aim
+Players.PlayerAdded:Connect(function(plr)
+    plr.CharacterAdded:Connect(function(char)
+        if espEnabled then
+            task.wait(1)
+            local hl = Instance.new("SelectionBox")
+            hl.Adornee = char
+            hl.LineThickness = 0.06
+            hl.Color3 = Color3.fromRGB(255, 0, 0) -- Couleur par défaut de l'ESP
+            hl.SurfaceTransparency = 1
+            hl.Parent = game.CoreGui
+            espObjects[plr.Name] = hl
+        end
+
+        -- Si le silent aim est activé et qu'un nouveau joueur rejoint, on s'assure qu'il n'a pas de contour bleu par défaut
+        if silentAimEnabled and silentAimTarget and silentAimTarget.Name ~= plr.Name then
+            local outline = espObjects[plr.Name]
+            if outline then
+                outline.Color3 = Color3.fromRGB(255, 0, 0)
 -- ══════════════════════════════════════════
 --              ONGLET TROLL
 -- ══════════════════════════════════════════
