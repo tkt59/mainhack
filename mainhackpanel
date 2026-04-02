@@ -37,9 +37,7 @@ local creditsHue     = 0
 local lastRespawn    = 0
  
 local espObjects = {}
-local silentAimEnabled = false
-local silentAimTarget = nil
-local silentAimColor = Color3.fromRGB(0, 162, 255) -- Bleu néon 
+ 
 -- ══════════════════════════════════════════
 --            NETTOYAGE ANCIENNE GUI
 -- ══════════════════════════════════════════
@@ -51,26 +49,7 @@ end
 -- ══════════════════════════════════════════
 --            CRÉATION GUI
 -- ══════════════════════════════════════════
-local MT = getrawmetatable(game)
-local OldNamecall = MT.__namecall
-setreadonly(MT, false)
-
-MT.__namecall = newcclosure(function(self, ...)
-    local Method = getnamecallmethod()
-    local Args = {...}
-
-    if Method == "FireServer" and tostring(self) == "MainEvent" and Args[1] == "UpdateMouse" then
-        if silentAimEnabled and silentAimTarget and silentAimTarget.Character then
-            local targetPart = silentAimTarget.Character:FindFirstChild("LowerTorso") or silentAimTarget.Character:FindFirstChild("HumanoidRootPart")
-            if targetPart then
-                Args[2] = targetPart.Position
-                return OldNamecall(self, unpack(Args))
-            end
-        end
-    end
-    return OldNamecall(self, unpack(Args))
-end)
-setreadonly(MT, true) 
+ 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name           = "MainHackPanel"
 ScreenGui.ResetOnSpawn   = false
@@ -1299,39 +1278,7 @@ RunService.RenderStepped:Connect(function()
             aimlockTarget = nil
         end
     end
-if silentAimEnabled then
-        local cam = workspace.CurrentCamera
-        local center = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2)
-        local bestDist = math.huge
-        local potentialTarget = nil
-
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
-                local root = plr.Character:FindFirstChild("HumanoidRootPart")
-                if root then
-                    local screenPos, onScreen = cam:WorldToScreenPoint(root.Position)
-                    if onScreen then
-                        local dist = (Vector2.new(screenPos.X, screenPos.Y) - center).Magnitude
-                        if dist < bestDist then
-                            bestDist = dist
-                            potentialTarget = plr
-                        end
-                    end
-                end
-            end
-        end
-        silentAimTarget = potentialTarget
-
-        -- Met en BLEU la personne visée
-        for name, outline in pairs(espObjects) do
-            if silentAimTarget and name == silentAimTarget.Name then
-                outline.Color3 = silentAimColor
-                outline.SurfaceTransparency = 0.7
-                outline.Visible = true
-            end
-        end
-    end
-
+ 
     rainbowHue = (rainbowHue + 0.003) % 1
     local borderColor = Color3.fromHSV(rainbowHue, 1, 1)
     RainbowFrame.BackgroundColor3 = borderColor
